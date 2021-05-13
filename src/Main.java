@@ -1,26 +1,30 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
 public class Main {
 
-    public static void main(String[] args) {
-        ThreadGroup group = new ThreadGroup("group");
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
 
-        System.out.println("Создаю потоки ...");
-        Thread thread1 = new MyThread(group, "1");
-        Thread thread2 = new MyThread(group, "2");
-        Thread thread3 = new MyThread(group, "3");
-        Thread thread4 = new MyThread(group, "4");
+        List<Callable<Integer>> myCallables = new ArrayList<Callable<Integer>>(){{
+                add(new MyCallable(10));
+                add(new MyCallable(5));
+                add(new MyCallable(8));
+                add(new MyCallable(9));}};
 
-        thread1.start();
-        thread2.start();
-        thread3.start();
-        thread4.start();
+        final ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-        try {
-            Thread.sleep(15000);
-        } catch (InterruptedException ignored) {
-
+        //Выполнение всех задач
+        final List<Future<Integer>> tasks = threadPool.invokeAll(myCallables);
+        for (Future<Integer> task : tasks) {
+            System.out.println("Результат задачи: " + task.get());
         }
 
-        System.out.println("Завершаю все потоки");
-        group.interrupt();
+        //Выполнение одной из задач
+        final Integer taskAny = threadPool.invokeAny(myCallables);
+        System.out.println("Результат задачи: " + taskAny);
+
+        threadPool.shutdown();
+
     }
 }
